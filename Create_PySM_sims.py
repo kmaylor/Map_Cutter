@@ -8,6 +8,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt 
 
 import pickle as pk
+from Map_cutter import MapCutter
 
 from optparse import OptionParser
 parser = OptionParser()
@@ -47,14 +48,10 @@ latra=args.latitude
 def map_dic():
     return {'cmb':[],'dust':[],'total':[]}
 
-map_val = lambda map,theta,phi: map[hp.ang2pix(nside,theta,phi,lonlat=True)]
 
 maps = dict(zip(map_type,[map_dic() for i in map_type]))
 sf=pysm.common.convert_units("uK_RJ","uK_CMB",nu)
 
-theta = np.arange(lonra[0],latra[1],2./60)
-phi = np.arange(latra[0],latra[1],2./60)
-Theta,Phi = np.meshgrid(theta,phi)
 
 for s,seed in enumerate(np.random.randint(0,10000,seeds)):
     c_config = models('c1', nside)
@@ -72,9 +69,9 @@ for s,seed in enumerate(np.random.randint(0,10000,seeds)):
         dust_cube = []
         total_cube = []
         for i,n in enumerate(nu):
-            cmb = map_val(cmb_all_nu[i,x,:]*sf[i],Theta.ravel(),Phi.ravel()).reshape((len(phi),len(theta)))
+            cmb = MapCutter(cmb_all_nu[i,x,:]).cut_map(lonra,latra,2./60)*sf[i]
             cmb_cube.append(cmb)
-            dust = map_val(dust_all_nu[i,x,:]*sf[i],Theta.ravel(),Phi.ravel()).reshape((len(phi),len(theta)))
+            dust = MapCutter(dust_all_nu[i,x,:]).cut_map(lonra,latra,2./60)*sf[i]
             dust_cube.append(dust)
             total_cube.append(cmb+dust)
         maps[m]['cmb'].append(np.array(cmb_cube))

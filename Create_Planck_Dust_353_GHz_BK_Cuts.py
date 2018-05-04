@@ -20,7 +20,7 @@ parser.add_option("-d", "--dust_map_loc",
 options,args = parser.parse_args()
 
 MP = MapCutter(options.dust_loc)
-MP.convert_map_units(353)
+sf=pysm.common.convert_units("MJysr","uK_CMB",353)
 
 delta_lon = 40.
 delta_lat = 30.
@@ -29,7 +29,7 @@ map_cuts = []
 
 for i,lon in enumerate(np.arange(-180,180+step-delta_lon,step)):
     for j,lat in enumerate(np.arange(-90,90+step-delta_lat,step)):
-        map_cuts.append(MP.cut_map([lon,lon+delta_lon],[lat,lat+delta_lat],2./60))
+        map_cuts.append(MP.cut_map([lon,lon+delta_lon],[lat,lat+delta_lat],2./60)*sf)
     pk.dump(map_cuts,open(options.filename,'a+'), protocol = -1)
     map_cuts = []
     print('Batch %d out of %s completed' %(i+1,(360.+step-delta_lon)/step))
