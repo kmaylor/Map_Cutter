@@ -30,6 +30,6 @@ map_cuts = []
 for i,lon in enumerate(np.arange(-180,180+step-delta_lon,step)):
     for j,lat in enumerate(np.arange(-90,90+step-delta_lat,step)):
         map_cuts.append(MP.cut_map([lon,lon+delta_lon],[lat,lat+delta_lat],2./60)*sf)
-    pk.dump(map_cuts,open(options.filename,'a+'), protocol = -1)
+    pk.dump(map_cuts,open(options.filename,'ab'), protocol = -1)
     map_cuts = []
     print('Batch %d out of %s completed' %(i+1,(360.+step-delta_lon)/step))

@@ -8,7 +8,7 @@ class MapCutter(object):
     Map Cutter object: instantiate with a healpix map and use methods to convert units and produce cuts from desired map regions.
     """
     def __init__(self, map_to_cut):
-        if isinstance(map_to_cut,basestring):
+        if isinstance(map_to_cut,str):
             self.map = read_map(map_to_cut)
         else:
             self.map = map_to_cut
