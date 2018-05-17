@@ -22,8 +22,8 @@ options,args = parser.parse_args()
 MP = MapCutter(options.dust_loc)
 sf=pysm.common.convert_units("MJysr","uK_CMB",353)
 
-delta_lon = 25.
-delta_lat = 25.
+delta_lon = 20.
+delta_lat = 20.
 step = 10.
 galactic_cut = 10.
 map_cuts = []
