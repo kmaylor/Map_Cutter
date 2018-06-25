@@ -1,4 +1,4 @@
-from healpy import ang2pix, read_map, npix2nside
+from healpy import get_interp_val, read_map, npix2nside
 from pickle import dump
 from numpy import arange, meshgrid
 from pysm.common import convert_units
@@ -19,7 +19,7 @@ class MapCutter(object):
         """
         Returns the value of the map at a given theta and phi in degrees.
         """
-        return self.map[ang2pix(self.nside,theta,phi,lonlat=True)]
+        return get_interp_val(self.map,theta,phi,lonlat=True)]
         
     def cut_map(self, lonra, latra, res, out_put_file = None):
         """
