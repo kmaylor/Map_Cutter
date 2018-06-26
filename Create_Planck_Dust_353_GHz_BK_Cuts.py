@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import pickle as pk
 from optparse import OptionParser
 from Map_Cutter import MapCutter
+import h5py
 
 parser = OptionParser()
 parser.add_option("-f", "--file", dest="filename", default = 'Planck_dust_cuts_353GHz.pk',
@@ -43,6 +44,8 @@ for i,phi_0 in enumerate(np.arange(0,2*np.pi,step)):
         else:
             phi_1=phi_f(phi_0,[theta_0,theta_1],0.01)
             map_cuts.append(MP.cut_map([phi_0,phi_1],[theta_0,theta_1],900)*sf)
-    pk.dump(map_cuts,open(options.filename,'ab'), protocol = -1)
+    with h5py.File('Planck_dust_cuts_353GHz.h5', 'a') as hf:
+        hf.create_dataset(str(i), data=map_cuts)
+    #pk.dump(map_cuts,open(options.filename,'ab'), protocol = -1)
     map_cuts = []
     print('Batch %d out of %s completed' %(i+1,(2*np.pi)/step))
