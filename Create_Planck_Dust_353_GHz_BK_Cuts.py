@@ -24,28 +24,45 @@ MP = MapCutter(options.dust_loc)
 sf=pysm.common.convert_units("MJysr","uK_CMB",353)
 
 
-delta_theta = 20./180*np.pi
-step = 5./180*np.pi
-galactic_cut = [80./180*np.pi,110./180*np.pi]
+step = 5
+galactic_cut = 20
 map_cuts = []
-
-def phi_f(phi_0,theta_ra,f):
-    """
-    Find the phi_1 that give f percent of the sky for given theta_0,1 and phi_0.
-    """
-    return phi_0 - 4*np.pi*f/(-np.cos(theta_ra[0])+np.cos(theta_ra[1]))
-
-for i,phi_0 in enumerate(np.arange(0,2*np.pi,step)):
-#for i,phi_0 in enumerate(np.arange(0,20./180*np.pi,step)):
-    for j,theta_0 in enumerate(np.arange(0,np.pi+step-delta_theta,step)):
-        theta_1 = theta_0+delta_theta
-        if (theta_0>=galactic_cut[0] and theta_0<=galactic_cut[0]) or (theta_1>=galactic_cut[0] and theta_1<=galactic_cut[0]): 
-            pass
-        else:
-            phi_1=phi_f(phi_0,[theta_0,theta_1],0.01)
-            map_cuts.append(MP.cut_map([phi_0,phi_1],[theta_0,theta_1],900)*sf)
+log_mean = 0
+log_var = 0
+lat_range = list(range(-90,-galactic_cut,step))+list(range(galactic_cut+step,90,step))
+for j,theta in enumerate(lat_range):
+    for i,phi in enumerate(np.arange(0,360,step)):
+        map_cut = MP.cut_map([phi,theta])*sf
+        map_cuts.append(map_cut)
+    log_mean += np.mean(np.log(map_cuts))/(i+1)
+    log_var += np.var(np.log(map_cuts))/(i+1)
     with h5py.File('Planck_dust_cuts_353GHz.h5', 'a') as hf:
-        hf.create_dataset(str(i), data=map_cuts)
-    #pk.dump(map_cuts,open(options.filename,'ab'), protocol = -1)
+        hf.create_dataset(str(j), data=map_cuts)
     map_cuts = []
-    print('Batch %d out of %s completed' %(i+1,(2*np.pi)/step))
+    print('Batch %d out of %s completed' %(j+1,len(lat_range)))
+
+print('Create norm-log maps')
+with h5py.File('Planck_dust_cuts_353GHz.h5', 'r') as hfr:
+    with h5py.File('Planck_dust_cuts_353GHz_norm_log.h5', 'w') as hfw:
+        for i,phi_0 in enumerate(np.arange(0,2*np.pi,step)):
+            log_maps=np.log(np.array(hfr.get(str(i))))
+            hfw.create_dataset(str(i),data=(log_maps-log_mean)/np.sqrt(log_var))
+            
+    
+#for i,phi_0 in enumerate(np.arange(0,2*np.pi,step)):
+#for i,phi_0 in enumerate(np.arange(0,20./180*np.pi,step)):
+#    for j,theta_0 in enumerate(np.arange(10/180*np.pi,np.pi+step-delta_theta-10/180*np.pi,step)):
+#        theta_1 = theta_0+delta_theta
+#        if (theta_0>=galactic_cut[0] and theta_0<=galactic_cut[0]) or (theta_1>=galactic_cut[0] and theta_1<=galactic_cut[0]): 
+#            pass
+#        else:
+#            phi_1=phi_f(phi_0,[theta_0,theta_1],0.01)
+#            map_cut = MP.cut_map([phi_0,phi_1],[theta_0,theta_1],900)*sf
+#            map_cuts.append(map_cut)
+#    log_mean += np.mean(np.log(map_cuts))*step/(2*np.pi)
+#    log_var += np.var(np.log(map_cuts))*step/(2*np.pi)
+#    with h5py.File('Planck_dust_cuts_353GHz.h5', 'a') as hf:
+#        hf.create_dataset(str(i), data=map_cuts)
+#    #pk.dump(map_cuts,open(options.filename,'ab'), protocol = -1)
+#    map_cuts = []
+#    print('Batch %d out of %s completed' %(i+1,(2*np.pi)/step))
