@@ -27,24 +27,29 @@ sf=pysm.common.convert_units("MJysr","uK_CMB",353)
 step = 5
 galactic_cut = 20
 map_cuts = []
-log_mean = 0
-log_var = 0
+log_means = []
+log_vars = []
+count=0
 lat_range = list(range(-90,-galactic_cut,step))+list(range(galactic_cut+step,90,step))
 for j,theta in enumerate(lat_range):
-    for i,phi in enumerate(np.arange(0,360,step)):
+    lon_range = np.arange(0,360,step/np.cos(theta/180*np.pi))
+    for i,phi in enumerate(lon_range):
         map_cut = MP.cut_map([phi,theta])*sf
         map_cuts.append(map_cut)
-    log_mean += np.mean(np.log(map_cuts))/(i+1)
-    log_var += np.var(np.log(map_cuts))/(i+1)
-    with h5py.File('Planck_dust_cuts_353GHz.h5', 'a') as hf:
-        hf.create_dataset(str(j), data=map_cuts)
+        with h5py.File('Planck_dust_cuts_353GHz.h5', 'a') as hf:
+            hf.create_dataset(str(count), data=map_cut)
+        count+=1
+    log_means.append(np.mean(np.log(map_cuts)))
+    log_vars.append(np.var(np.log(map_cuts)))
     map_cuts = []
     print('Batch %d out of %s completed' %(j+1,len(lat_range)))
+log_mean = np.mean(log_means)
+log_var = np.mean(log_vars)
 
 print('Create norm-log maps')
 with h5py.File('Planck_dust_cuts_353GHz.h5', 'r') as hfr:
     with h5py.File('Planck_dust_cuts_353GHz_norm_log.h5', 'w') as hfw:
-        for i,phi_0 in enumerate(np.arange(0,2*np.pi,step)):
+        for i in np.arange(len(hfr.keys())):
             log_maps=np.log(np.array(hfr.get(str(i))))
             hfw.create_dataset(str(i),data=(log_maps-log_mean)/np.sqrt(log_var))
             
