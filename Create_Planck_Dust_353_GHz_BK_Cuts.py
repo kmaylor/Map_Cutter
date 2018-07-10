@@ -30,19 +30,19 @@ map_cuts = []
 #log_means = []
 #log_vars = []
 count=0
-lat_range = list(range(-90,-galactic_cut,step))+list(range(galactic_cut+step,90,step))
-for j,theta in enumerate(lat_range):
-    lon_range = np.arange(0,360,step/np.cos(theta/180*np.pi))
-    for i,phi in enumerate(lon_range):
-        map_cut = MP.cut_map([phi,theta])*sf
-        #map_cuts.append(map_cut)
-        with h5py.File('Planck_dust_cuts_353GHz.h5', 'a') as hf:
-            hf.create_dataset(str(count), data=map_cut)
-        count+=1
+#lat_range = list(range(-90,-galactic_cut,step))+list(range(galactic_cut+step,90,step))
+#for j,theta in enumerate(lat_range):
+#    lon_range = np.arange(0,360,step/np.cos(theta/180*np.pi))
+#    for i,phi in enumerate(lon_range):
+#        map_cut = MP.cut_map([phi,theta])*sf
+#        #map_cuts.append(map_cut)
+#        with h5py.File('Planck_dust_cuts_353GHz.h5', 'a') as hf:
+#            hf.create_dataset(str(count), data=map_cut)
+#        count+=1
     #log_means.append(np.mean(np.log(map_cuts)))
     #log_vars.append(np.var(np.log(map_cuts)))
     #map_cuts = []
-    print('Batch %d out of %s completed' %(j+1,len(lat_range)))
+#    print('Batch %d out of %s completed' %(j+1,len(lat_range)))
 #log_mean = np.mean(log_means)
 #log_var = np.mean(log_vars)
 
@@ -50,10 +50,12 @@ print('Create norm-log maps')
 with h5py.File('Planck_dust_cuts_353GHz.h5', 'r') as hfr:
     log_maps=np.log([i for i in hfr.values()])
 log_mean = np.mean(log_maps)
-log_var =np.var(log_maps)
-with h5py.File('Planck_dust_cuts_353GHz_norm_log.h5', 'w') as hfw:
+log_maps = log_maps-log_mean
+log_max =np.max(log_maps)
+log_min = np.min(log_maps)
+with h5py.File('Planck_dust_cuts_353GHz_norm_log_2.h5', 'w') as hfw:
     for i,m in enumerate(log_maps):
-        hfw.create_dataset(str(i),data=(m-log_mean)/np.sqrt(log_var))
+        hfw.create_dataset(str(i),data=2*(m-log_min)/(log_max-log_min)-1)
         
 #with h5py.File('Planck_dust_cuts_353GHz.h5', 'r') as hfr:
 #    with h5py.File('Planck_dust_cuts_353GHz_norm_log.h5', 'w') as hfw:
