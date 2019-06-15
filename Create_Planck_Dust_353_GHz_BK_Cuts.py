@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 import healpy as hp
 import pysm
@@ -8,7 +9,7 @@ import pickle as pk
 from optparse import OptionParser
 from Map_Cutter import MapCutter
 import h5py
-
+from skimage.transform import rescale
 parser = OptionParser()
 parser.add_option("-f", "--file", dest="filename", default = 'Planck_dust_cuts_353GHz.pk',
                   help="output file")
@@ -27,33 +28,35 @@ sf=pysm.common.convert_units("MJysr","uK_CMB",353)
 step = 5
 galactic_cut = 20
 map_cuts = []
-#log_means = []
-#log_vars = []
+log_means = []
+log_vars = []
 count=0
-#lat_range = list(range(-90,-galactic_cut,step))+list(range(galactic_cut+step,90,step))
-#for j,theta in enumerate(lat_range):
-#    lon_range = np.arange(0,360,step/np.cos(theta/180*np.pi))
-#    for i,phi in enumerate(lon_range):
-#        map_cut = MP.cut_map([phi,theta])*sf
-#        #map_cuts.append(map_cut)
-#        with h5py.File('Planck_dust_cuts_353GHz.h5', 'a') as hf:
-#            hf.create_dataset(str(count), data=map_cut)
-#        count+=1
-    #log_means.append(np.mean(np.log(map_cuts)))
-    #log_vars.append(np.var(np.log(map_cuts)))
-    #map_cuts = []
-#    print('Batch %d out of %s completed' %(j+1,len(lat_range)))
-#log_mean = np.mean(log_means)
-#log_var = np.mean(log_vars)
+lat_range = list(range(-90,-galactic_cut,step))+list(range(galactic_cut+step,95,step))
+for j,theta in enumerate(lat_range):
+    lon_range = np.arange(0,360,step/np.cos(theta/180.*np.pi))
+    print(lon_range)
+    for i,phi in enumerate(lon_range):
+        map_cut = rescale(MP.cut_map([phi,theta])*sf,1./4.,preserve_range=True,anti_aliasing=False)
+        map_cuts.append(map_cut)
+        with h5py.File('Planck_dust_cuts_353GHz_res256.h5', 'a') as hf:
+            hf.create_dataset(str(count), data=map_cut)
+        count+=1
+    log_means.append(np.mean(np.log(map_cuts)))
+    log_vars.append(np.var(np.log(map_cuts)))
+    map_cuts = []
+    print('Batch %d out of %s completed' %(j+1,len(lat_range)))
+log_mean = np.mean(log_means)
+log_var = np.mean(log_vars)
 
 print('Create norm-log maps')
-with h5py.File('Planck_dust_cuts_353GHz.h5', 'r') as hfr:
+with h5py.File('Planck_dust_cuts_353GHz_res256.h5', 'r') as hfr:
     log_maps=np.log([i for i in hfr.values()])
-log_mean = np.mean(log_maps)
-log_maps = log_maps-log_mean
+
+
 log_max =np.max(log_maps)
 log_min = np.min(log_maps)
-with h5py.File('Planck_dust_cuts_353GHz_norm_log_2.h5', 'w') as hfw:
+print(log_max,log_min,log_mean)
+with h5py.File('Planck_dust_cuts_353GHz_norm_log_res256.h5', 'w') as hfw:
     for i,m in enumerate(log_maps):
         hfw.create_dataset(str(i),data=2*(m-log_min)/(log_max-log_min)-1)
         
