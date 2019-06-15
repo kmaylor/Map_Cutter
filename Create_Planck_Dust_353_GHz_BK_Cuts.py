@@ -11,17 +11,23 @@ from Map_Cutter import MapCutter
 import h5py
 from skimage.transform import rescale
 parser = OptionParser()
-parser.add_option("-f", "--file", dest="filename", default = 'Planck_dust_cuts_353GHz.pk',
+parser.add_option("-f", "--file", dest="filename", default = 'Planck_dust_cuts_353GHz',
                   help="output file")
 
 parser.add_option("-d", "--dust_map_loc",
                    dest="dust_loc", default='COM_CompMap_Dust-GNILC-F353_2048_R2.00.fits',
                   help="path to dust map")
 
+parser.add_option("-r", "--resolution",
+                   dest="resolution", default='256',
+                  help="output map resolution")
+
+
 
 options,args = parser.parse_args()
-
+output_file_prefix = options.filename
 MP = MapCutter(options.dust_loc)
+res = int(options.resolution)/1024
 sf=pysm.common.convert_units("MJysr","uK_CMB",353)
 
 
@@ -34,11 +40,11 @@ count=0
 lat_range = list(range(-90,-galactic_cut,step))+list(range(galactic_cut+step,95,step))
 for j,theta in enumerate(lat_range):
     lon_range = np.arange(0,360,step/np.cos(theta/180.*np.pi))
-    print(lon_range)
+    
     for i,phi in enumerate(lon_range):
-        map_cut = rescale(MP.cut_map([phi,theta])*sf,1./4.,preserve_range=True,anti_aliasing=False)
+        map_cut = rescale(MP.cut_map([phi,theta])*sf,res,preserve_range=True,anti_aliasing=False)
         map_cuts.append(map_cut)
-        with h5py.File('Planck_dust_cuts_353GHz_res256.h5', 'a') as hf:
+        with h5py.File(output_file_prefix, 'a') as hf:
             hf.create_dataset(str(count), data=map_cut)
         count+=1
     log_means.append(np.mean(np.log(map_cuts)))
@@ -48,15 +54,15 @@ for j,theta in enumerate(lat_range):
 log_mean = np.mean(log_means)
 log_var = np.mean(log_vars)
 
-print('Create norm-log maps')
-with h5py.File('Planck_dust_cuts_353GHz_res256.h5', 'r') as hfr:
+print('Create log-norm maps')
+with h5py.File(output_file_prefix, 'r') as hfr:
     log_maps=np.log([i for i in hfr.values()])
 
 
 log_max =np.max(log_maps)
 log_min = np.min(log_maps)
-print(log_max,log_min,log_mean)
-with h5py.File('Planck_dust_cuts_353GHz_norm_log_res256.h5', 'w') as hfw:
+
+with h5py.File(output_file_prefix+'_log_norm_res256.h5', 'w') as hfw:
     for i,m in enumerate(log_maps):
         hfw.create_dataset(str(i),data=2*(m-log_min)/(log_max-log_min)-1)
         
